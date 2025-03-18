@@ -260,9 +260,8 @@ def main():
             max_value=datetime.now()
         ))
     with col2:
-        # 计算从上线日期到今年年底的最大年数
-        max_years = datetime.now().year - launch_date.year + 1
-        forecast_years = st.number_input("预测年数", 1, max_years, min(3, max_years))
+        # 移除最大年数限制，设置默认值为10
+        forecast_years = st.number_input("预测年数", 1, 100, 10)
     with col3:
         is_yearly_params = st.radio(
             "参数设置模式",
