@@ -17,16 +17,18 @@ def create_input_section(year, year_number):
     
     # 收入占比设置
     st.write("各付费方案收入占比设置：")
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     with col1:
         week_prop = st.number_input(f"周付费收入占比", 0.0, 1.0, 0.2, key=f"week_prop_{year}")
     with col2:
-        month_prop = st.number_input(f"月付费收入占比", 0.0, 1.0, 0.3, key=f"month_prop_{year}")
+        month_prop = st.number_input(f"月付费收入占比", 0.0, 1.0, 0.2, key=f"month_prop_{year}")
     with col3:
-        year_prop = st.number_input(f"年付费收入占比", 0.0, 1.0, 0.5, key=f"year_prop_{year}")
+        quarter_prop = st.number_input(f"季付费收入占比", 0.0, 1.0, 0.2, key=f"quarter_prop_{year}")
+    with col4:
+        year_prop = st.number_input(f"年付费收入占比", 0.0, 1.0, 0.4, key=f"year_prop_{year}")
     
     # 检查占比之和是否为1
-    total_prop = week_prop + month_prop + year_prop
+    total_prop = week_prop + month_prop + quarter_prop + year_prop
     if abs(total_prop - 1.0) > 0.001:
         st.warning(f"各付费方案收入占比之和应为1，当前为{total_prop:.2f}")
     
@@ -52,6 +54,16 @@ def create_input_section(year, year_number):
     with col3:
         month_7 = st.number_input(f"第7月续订率", 0.0, 1.0, 0.55, key=f"month_7_{year}")
     
+    # 季付费续订率参数
+    st.write("季付费续订率：")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        quarter_1 = st.number_input(f"第1季续订率", 0.0, 1.0, 0.82, key=f"quarter_1_{year}")
+    with col2:
+        quarter_3 = st.number_input(f"第3季续订率", 0.0, 1.0, 0.65, key=f"quarter_3_{year}")
+    with col3:
+        quarter_4 = st.number_input(f"第4季续订率", 0.0, 1.0, 0.60, key=f"quarter_4_{year}")
+    
     # 年付费续订率参数
     st.write("年付费续订率：")
     col1, col2, col3 = st.columns(3)
@@ -67,6 +79,7 @@ def create_input_section(year, year_number):
     params = {
         'week': ([week_1, week_3, week_7], week_prop),
         'month': ([month_1, month_3, month_7], month_prop),
+        'quarter': ([quarter_1, quarter_3, quarter_4], quarter_prop),
         'year': ([year_1, year_2, year_3], year_prop)
     }
     
@@ -79,24 +92,26 @@ def plot_retention_curves(yearly_params, launch_date, is_yearly_params):
     is_yearly_params: 参数设置模式
     """
     # 计算从上线到今天的时间跨度
-    days_since_launch = (datetime.now() - launch_date).days
+    # days_since_launch = (datetime.now() - launch_date).days
     
     # 计算最大观察期（以周期为单位）
-    max_weeks = min(52, days_since_launch // 7)  # 最多显示52周
-    max_months = min(24, days_since_launch // 30)  # 最多显示24个月
-    max_years = min(5, days_since_launch // 365)  # 最多显示5年
+    max_weeks = 104  # 2年
+    max_months = 24  # 2年
+    max_quarters = 20  # 5年
+    max_years = 10 # 10年
     
-    # 创建三个子图
+    # 创建四个子图
     fig = make_subplots(
-        rows=3, cols=1,
-        subplot_titles=("周付费用户续订率曲线", "月付费用户续订率曲线", "年付费用户续订率曲线"),
-        vertical_spacing=0.12
+        rows=4, cols=1,
+        subplot_titles=("周付费用户续订率曲线", "月付费用户续订率曲线", "季付费用户续订率曲线", "年付费用户续订率曲线"),
+        vertical_spacing=0.10
     )
 
     # 定义观测点
     points = {
         'week': np.array([1, 3, 7]),
         'month': np.array([1, 3, 7]),
+        'quarter': np.array([1, 3, 4]),
         'year': np.array([1, 2, 3])
     }
     
@@ -104,6 +119,7 @@ def plot_retention_curves(yearly_params, launch_date, is_yearly_params):
     max_periods = {
         'week': max_weeks,
         'month': max_months,
+        'quarter': max_quarters,
         'year': max_years
     }
     
@@ -111,7 +127,7 @@ def plot_retention_curves(yearly_params, launch_date, is_yearly_params):
     colors = ['blue', 'red', 'green', 'purple', 'orange']
     
     # 为每种付费方式绘制曲线
-    for period_idx, period in enumerate(['week', 'month', 'year'], 1):
+    for period_idx, period in enumerate(['week', 'month', 'quarter', 'year'], 1):
         # 生成连续的周期点用于绘制平滑曲线
         x_smooth = np.linspace(1, max_periods[period], 100)
         
@@ -182,15 +198,16 @@ def plot_retention_curves(yearly_params, launch_date, is_yearly_params):
                 )
     
     # 更新布局
-    fig.update_layout(height=800)
+    fig.update_layout(height=1000)
     
     # 更新x轴标签
     fig.update_xaxes(title_text="周数", row=1, col=1)
     fig.update_xaxes(title_text="月数", row=2, col=1)
-    fig.update_xaxes(title_text="年数", row=3, col=1)
+    fig.update_xaxes(title_text="季数", row=3, col=1)
+    fig.update_xaxes(title_text="年数", row=4, col=1)
     
     # 更新y轴标签
-    for i in range(1, 4):
+    for i in range(1, 5):
         fig.update_yaxes(title_text="续订率", row=i, col=1)
     
     return fig
@@ -208,6 +225,7 @@ def main():
         #### 续订率计算口径
         • 周续订：weekN订阅金额/week0订阅金额  
         • 月续订：monthN订阅金额/month0订阅金额  
+        • 季续订：quarterN订阅金额/quarter0订阅金额  
         • 年续订：yearN订阅金额/year0订阅金额
 
         ### 🔍 模型假设
@@ -218,11 +236,11 @@ def main():
         #### 2. 续订率假设
         • 续订率衰减符合RC曲线（对数幂函数）  
         • 通过观测点拟合得到完整的续订曲线  
-        • week0、month0、year0订阅均发生在day0  
-        • 周订阅以7天为周期，月订阅以30天为周期，年订阅以365天为周期
+        • week0、month0、quarter0、year0订阅均发生在day0  
+        • 周订阅以7天为周期，月订阅以30天为周期，季订阅以90天为周期，年订阅以365天为周期
 
         #### 3. 产品假设
-        • 仅包含周期续订的付费方案（周、月、年）  
+        • 仅包含周期续订的付费方案（周、月、季、年）  
         • 各续订方案收入占比之和为100%
 
         ### 💡 操作指南
