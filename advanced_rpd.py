@@ -18,17 +18,20 @@ class RevenueCalculator:
         # 定义不同周期的观测点（使用周期数而不是天数）
         self.week_points = np.array([1, 3, 7])  # 1周、3周、7周
         self.month_points = np.array([1, 3, 7])  # 1月、3月、7月
+        self.quarter_points = np.array([1, 3, 4])  # 1季、3季、4季
         self.year_points = np.array([1, 2, 3])  # 1年、2年、3年
 
     def fit_period_parameters(self, retention_rates, period_type):
         """根据不同周期拟合参数
         retention_rates: 对应周期点的续订率
-        period_type: 'week', 'month', 或 'year'
+        period_type: 'week', 'month', 'quarter', 或 'year'
         """
         if period_type == 'week':
             periods = self.week_points
         elif period_type == 'month':
             periods = self.month_points
+        elif period_type == 'quarter':
+            periods = self.quarter_points
         else:  # year
             periods = self.year_points
         
@@ -37,13 +40,15 @@ class RevenueCalculator:
     def calculate_retention_rate(self, days, a, b, period_type):
         """计算特定天数对应的留存率
         days: 距离激活的天数
-        period_type: 'week', 'month', 或 'year'
+        period_type: 'week', 'month', 'quarter', 或 'year'
         """
         # 将天数转换为对应的周期数
         if period_type == 'week':
             periods = days / 7
         elif period_type == 'month':
             periods = days / 30
+        elif period_type == 'quarter':
+            periods = days / 90
         else:  # year
             periods = days / 365
         
@@ -57,7 +62,7 @@ class RevenueCalculator:
         year_params = {}
         for year, params in yearly_params.items():
             year_params[year] = {}
-            for period in ['week', 'month', 'year']:
+            for period in ['week', 'month', 'quarter', 'year']:
                 retention_rates, revenue_prop = params[period]
                 a, b = self.fit_period_parameters(retention_rates, period)
                 year_params[year][period] = (a, b, revenue_prop)
@@ -87,6 +92,7 @@ class RevenueCalculator:
                         for period, (period_days, divisor) in {
                             'week': (7, 7),
                             'month': (30, 30),
+                            'quarter': (90, 90),
                             'year': (365, 365)
                         }.items():
                             # 只有在当天是对应周期的付费日时才计算收入
