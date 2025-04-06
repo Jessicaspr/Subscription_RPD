@@ -9,6 +9,10 @@ def log_power_function(x, a, b):
 
 def fit_revenue_parameters(days, retention_rates):
     """拟合留存率衰减参数"""
+    # 检查是否所有留存率都为0
+    if np.all(retention_rates == 0):
+        return 0, 0  # 返回特殊值表示全为0的情况
+    
     log_retention_rates = np.log(retention_rates)
     popt, _ = curve_fit(log_power_function, days, log_retention_rates)
     return popt
@@ -42,6 +46,10 @@ class RevenueCalculator:
         days: 距离激活的天数
         period_type: 'week', 'month', 'quarter', 或 'year'
         """
+        # 特殊情况处理：如果a和b都为0，表示该方案不使用
+        if a == 0 and b == 0:
+            return 0
+        
         # 将天数转换为对应的周期数
         if period_type == 'week':
             periods = days / 7
