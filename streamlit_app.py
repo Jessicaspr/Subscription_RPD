@@ -274,7 +274,7 @@ def main():
         launch_date = pd.Timestamp(st.date_input(
             "产品上线日期",
             value=datetime(2024, 1, 1),
-            min_value=datetime(2020, 1, 1),
+            min_value=datetime(2000, 1, 1),
             max_value=datetime.now()
         ))
     with col2:
